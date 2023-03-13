@@ -4,6 +4,13 @@ const port = 8000;
 const fs = require('fs');
 const path = require('node:path');
 
+const user = {
+	id: 123,
+	username: 'testuser',
+	password: 'qwerty'
+};
+
+
 const root = process.cwd()
 const curPath = path.join(__dirname, 'files')
 
@@ -36,7 +43,37 @@ const requestListener = (req, res) => {
 			res.writeHead(405);
 			res.end('HTTP method not allowed');
 		}
-	} else if (req.url === '/delete') {
+	} else if (req.url === '/auth') {
+		if (req.method === "POST") {
+			let data = "";
+			req.on('data', (chunk) => {
+				data += chunk.toString();
+			})
+			req.on('end', () => {
+				data = JSON.parse(data);
+				if (data.username === user.username && data.password === user.password) {
+
+					res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
+					// console.log(res);
+					res.setHeader('Cookie', ['authorized=true', 'userId=123']);
+					// res.cookie('authorized', true, { maxAge: 900000, httpOnly: true });
+					res.writeHead(200);
+					res.end('auth success');
+				} else {
+					res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
+					res.writeHead(400);
+					res.end('«Неверный логин или пароль');
+				}
+				// console.log(JSON.parse(data));
+			})
+
+		} else {
+			res.setHeader('Content-Type', 'text/html');
+			res.writeHead(405);
+			res.end('HTTP method not allowed');
+		}
+	}
+	else if (req.url === '/delete') {
 		if (req.method === "DELETE") {
 			res.setHeader('Content-Type', 'text/html');
 			res.writeHead(200);
