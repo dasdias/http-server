@@ -50,21 +50,35 @@ const requestListener = (req, res) => {
 				data += chunk.toString();
 			})
 			req.on('end', () => {
-				data = JSON.parse(data);
-				if (data.username === user.username && data.password === user.password) {
+				if (data) {
+					try {
+						data = JSON.parse(data);
+					} catch (error) {
+						res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
+						res.writeHead(200);
+						res.end('Неверный JSON формат');
+						return
+					}
+					if (data.username === user.username && data.password === user.password) {
 
-					res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
-					// console.log(res);
-					res.setHeader('Cookie', ['authorized=true', 'userId=123']);
-					// res.cookie('authorized', true, { maxAge: 900000, httpOnly: true });
-					res.writeHead(200);
-					res.end('auth success');
+						res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
+						// console.log(res);
+						res.setHeader('Cookie', ['authorized=true', 'userId=123']);
+						// res.cookie('authorized', true, { maxAge: 900000, httpOnly: true });
+						res.writeHead(200);
+						res.end('auth success');
+					} else {
+						res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
+						res.writeHead(400);
+						res.end('Неверный логин или пароль');
+					}
+					// console.log(JSON.parse(data));
+
 				} else {
 					res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
-					res.writeHead(400);
-					res.end('«Неверный логин или пароль');
+					res.writeHead(200);
+					res.end('Необходимо авторизоваться');
 				}
-				// console.log(JSON.parse(data));
 			})
 
 		} else {
