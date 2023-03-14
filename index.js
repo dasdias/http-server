@@ -2,13 +2,31 @@ const http = require("http");
 const host = 'localhost';
 const port = 8000;
 const fs = require('fs');
-const path = require('node:path');
+const path = require('path');
 
 const user = {
 	id: 123,
 	username: 'testuser',
 	password: 'qwerty'
 };
+
+
+function parseCookies(request) {
+  const list = {};
+  const cookieHeader = request.headers?.cookie;
+  if (!cookieHeader) return list;
+
+  cookieHeader.split(`;`).forEach(function (cookie) {
+    let [name, ...rest] = cookie.split(`=`);
+    name = name?.trim();
+    if (!name) return;
+    const value = rest.join(`=`).trim();
+    if (!value) return;
+    list[name] = decodeURIComponent(value);
+  });
+
+  return list;
+}
 
 
 const root = process.cwd()
@@ -35,6 +53,11 @@ const requestListener = (req, res) => {
 		}
 	} else if (req.url === '/post') {
 		if (req.method === "POST") {
+      const cookie = parseCookies(req)
+      if (cookie?.authorized == 'true' && cookie?.userId === '123') {
+        console.log("Всё Ок. Запускаем функцию");
+      }
+
 			res.setHeader('Content-Type', 'text/html');
 			res.writeHead(200);
 			res.end('success');
@@ -60,11 +83,15 @@ const requestListener = (req, res) => {
 						return
 					}
 					if (data.username === user.username && data.password === user.password) {
+            let date = new Date();
+            date.setTime(date.getTime() + (2 * 24 * 60 * 60 * 1000));
+            let expires = "; expires=" + date.toUTCString();
+
+            const cookieString1 = `authorized=true; Path=/ ${expires}`;
+            const cookieString2 = `userId=123; Path=/ ${expires}`;
 
 						res.setHeader('Content-Type', 'text/html', "charset=UTF-8");
-						// console.log(res);
-						res.setHeader('Cookie', ['authorized=true', 'userId=123']);
-						// res.cookie('authorized', true, { maxAge: 900000, httpOnly: true });
+            res.setHeader('Set-Cookie', [cookieString1, cookieString2]);
 						res.writeHead(200);
 						res.end('auth success');
 					} else {
@@ -125,7 +152,6 @@ const requestListener = (req, res) => {
 };
 
 const server = http.createServer(requestListener);
-
 server.listen(port, host, () => {
 	console.log(`Server is running on http://${host}:${port}`);
 });
